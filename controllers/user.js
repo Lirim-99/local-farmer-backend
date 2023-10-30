@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
 import jwt from 'jsonwebtoken';
 import tryCatch from './utils/tryCatch.js';
+import Room from '../models/Room.js';
 
 export const register = tryCatch(async (req, res) => {
   const { name, email, password } = req.body;
@@ -58,15 +59,15 @@ export const login = tryCatch(async (req, res) => {
 });
 
 export const updateProfile = tryCatch(async (req, res) => {
-    const updatedUser = await User.findByIdAndUpdate(req.user.id, req.body, {
-      new: true,
-    });
-    const { _id: id, name, photoURL } = updatedUser;
-  
-    // To Do: update all the rooms records added by this user
-  
-    const token = jwt.sign({ id, name, photoURL }, process.env.JWT_SECRET, {
-      expiresIn: '1h',
-    });
-    res.status(200).json({ success: true, result: { name, photoURL, token } });
+  const updatedUser = await User.findByIdAndUpdate(req.user.id, req.body, {
+    new: true,
   });
+  const { _id: id, name, photoURL } = updatedUser;
+
+  await Room.updateMany({ uid: id }, { uName: name, uPhoto: photoURL });
+
+  const token = jwt.sign({ id, name, photoURL }, process.env.JWT_SECRET, {
+    expiresIn: '1h',
+  });
+  res.status(200).json({ success: true, result: { name, photoURL, token } });
+});
